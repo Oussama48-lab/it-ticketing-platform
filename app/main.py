@@ -31,6 +31,10 @@ def hello():
 @app.route("/tickets", methods=["POST"])
 def create_ticket():
     data = request.get_json()
+
+    if not data or not data.get("title"):
+        return jsonify({"error": "Title is required"}), 400
+
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -42,6 +46,7 @@ def create_ticket():
     cur.close()
     conn.close()
     return jsonify({"id": new_id, "status": "OPEN"}), 201
+
 @app.route("/tickets", methods=["GET"])
 def list_tickets():
     conn = get_connection()
@@ -61,6 +66,24 @@ def list_tickets():
             "status": row[5]
         })
     return jsonify(tickets)
+
+@app.route("/tickets/<int:ticket_id>/status", methods=["PATCH"])
+def update_status(ticket_id):
+    data = request.get_json()
+    new_status = data.get("status")
+
+    valid_statuses = ["OPEN", "IN_PROGRESS", "RESOLVED"]
+    if new_status not in valid_statuses:
+        return jsonify({"error": "Invalid status"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE tickets SET status = %s WHERE id = %s", (new_status, ticket_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"id": ticket_id, "status": new_status})
 
 if __name__ == "__main__":
     init_db()
