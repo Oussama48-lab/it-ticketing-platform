@@ -1,12 +1,20 @@
 services:
+  nginx:
+    image: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+
   app:
     build: .
-    ports:
-      - "5000:5000"
     depends_on:
       - db
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tickets
+
   db:
     image: postgres:16
     environment:
